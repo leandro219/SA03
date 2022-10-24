@@ -1,0 +1,71 @@
+#include "DHTesp.h"
+#include "WiFi.h"
+#include "PubSubClient.h"
+
+const char* ssid="Wokwi-GUEST";
+const char* password="";
+
+int port =1883:
+const char* server = "broker.hivemq.com";
+const char* topico = "temp_umidade";
+
+DHTesp dhtSensor;
+WiFiClient espClient;
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Iniciando Setup");
+  
+  WiFi.begin(ssid, password);
+  dhtSensor.setup(15, DHTesp::DHT22);
+  pinMode(14, OUTPUT);
+  pinMode(27, OUTPUT);
+  
+ while (WiFi.status() != WL_CONNECTED){
+  delay(500);
+  Serial.println ("conectando no wifi..");
+ }  
+  
+  Serial.println ("conectando ao Broker");
+  mqttClient.setServer(server,port);
+  char* clientId = "Gachcar";
+  
+  mqttClient.connect(ClientId);
+  mqttClient.subscribe(topico);
+  while(!mqttClient.connected()){
+    delay(500)
+    Serial.println(".");
+  }
+  Serial.println("Broker Conectado");
+}
+
+void loop() {
+
+  float temperatura = dhtSensor.getTemperature();
+  float humidade = dhtSensor.getHumidity();
+  
+  Serial.println("temperatura :" + String(temperatura) + "c");
+  Serial.println("Humidade :" + String(humidade) + "%");
+  Serial.println("-----------------------------------------");
+  
+  int msg = mqttClient.publish(topico, "{\"temperatura\": 55.2, \"humidade\": 72}");
+  if(!msg){
+    Serial.println("Erro ao enviar dados");
+    mqttClient.connect("Gachar");
+    mqttClient.subscribe(topico);
+
+  }else {
+    Serial.println("Dados Enviados");
+  }
+  
+  delay(3000)
+  
+  digitalWrite(14, HIGH);
+  digitalWrite(27, HIGH);
+  delay(1000);
+
+  digitalWrite(14, LOW);
+  digitalWrite(27, LOW);
+  delay(1000);
+
+}
